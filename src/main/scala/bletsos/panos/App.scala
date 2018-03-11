@@ -24,30 +24,6 @@ object App {
     // valid spark format like parquet "parquet".
     val format = conf.getString("dataGen.format")
 
-    val tables = new TPCDSTables(
-      spark.sqlContext,
-      dsdgenDir = conf.getString("dataGen.dsdgenDir"), // location of dsdgen
-      scaleFactor = conf.getString("dataGen.scaleFactor"),
-      useDoubleForDecimal = false, // true to replace DecimalType with DoubleType
-      useStringForDate = false) // true to replace DateType with StringType
-
-    tables.genData(
-      location = rootDir,
-      format = format,
-      overwrite = true, // overwrite the data that is already there
-      partitionTables = true, // create the partitioned fact tables
-      clusterByPartitionColumns = true, // shuffle to get partitions coalesced into single files.
-      filterOutNullPartitionValues = false, // true to filter out the partition with NULL key value
-      tableFilter = "", // "" means generate all tables
-      numPartitions = 100) // how many dsdgen partitions to run - number of input tasks.
-
-    spark.sql(s"create database if not exists $databaseName")
-
-    tables.createExternalTables(
-      rootDir, format, databaseName, overwrite = true, discoverPartitions = true)
-
-    tables.analyzeTables(databaseName, analyzeColumns = true)
-
     val tpcds = new TPCDS (sqlContext = spark.sqlContext)
 
     val resultLocation = conf.getString("resultLocation") // place to write results
